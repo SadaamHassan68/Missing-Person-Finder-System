@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1>Edit User</h1>
+                <a href="{{ url_for('user_details', user_id=user.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to User Details
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">User Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('edit_user', user_id=user.id) }}">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="username" 
+                                   name="username" 
+                                   value="{{ user.username }}" 
+                                   required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" 
+                                   class="form-control" 
+                                   id="email" 
+                                   name="email" 
+                                   value="{{ user.email }}" 
+                                   required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">New Password</label>
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="password" 
+                                   name="password" 
+                                   placeholder="Leave blank to keep current password">
+                            <small class="text-muted">Only fill this if you want to change the password</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">Confirm New Password</label>
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="confirm_password" 
+                                   name="confirm_password" 
+                                   placeholder="Leave blank to keep current password">
+                        </div>
+                        {% if current_user.is_admin %}
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" 
+                                   class="form-check-input" 
+                                   id="is_admin" 
+                                   name="is_admin" 
+                                   {% if user.is_admin %}checked{% endif %}>
+                            <label class="form-check-label" for="is_admin">Admin User</label>
+                        </div>
+                        {% endif %}
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">User Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Total Cases</label>
+                        <p class="mb-0">{{ user.cases|length }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Active Cases</label>
+                        <p class="mb-0">{{ user.cases|selectattr('status', 'equalto', 'missing')|list|length }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Found Cases</label>
+                        <p class="mb-0">{{ user.cases|selectattr('status', 'equalto', 'found')|list|length }}</p>
+                    </div>
+                    <div>
+                        <label class="form-label text-muted">Last Case Update</label>
+                        <p class="mb-0">
+                            {% set last_update = user.cases|map(attribute='created_at')|list|sort|last %}
+                            {{ last_update.strftime('%Y-%m-%d %H:%M') if last_update else 'No cases' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Password validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        
+        if (password || confirmPassword) {
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+            }
+        }
+    });
+</script>
+{% endblock %} 

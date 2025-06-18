@@ -1,0 +1,306 @@
+{% extends "dashboard_layout.html" %}
+
+{% block title %}Case Details{% endblock %}
+
+{% block extra_css %}
+<style>
+    .case-photo {
+        width: 100%;
+        max-height: 400px;
+        object-fit: cover;
+        border-radius: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .photo-thumbnail {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        margin: 0.25rem;
+        border: 2px solid transparent;
+        transition: all 0.2s;
+    }
+
+    .photo-thumbnail:hover {
+        transform: scale(1.05);
+    }
+
+    .photo-thumbnail.active {
+        border-color: var(--primary-color);
+    }
+
+    .info-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .info-card h4 {
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+
+    .info-item {
+        margin-bottom: 1rem;
+    }
+
+    .info-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .info-label {
+        color: var(--secondary-color);
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .info-value {
+        font-weight: 500;
+    }
+
+    .case-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .status-open {
+        background: rgba(28, 200, 138, 0.1);
+        color: var(--success-color);
+    }
+
+    .status-closed {
+        background: rgba(231, 74, 59, 0.1);
+        color: #e74a3b;
+    }
+
+    .admin-actions {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Case Details</h1>
+    <a href="{{ url_for('view_cases') }}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left"></i> Back to Cases
+    </a>
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+        <!-- Photos Section -->
+        <div class="info-card">
+            <div class="text-center">
+                {% if case.photos %}
+                <img src="{{ url_for('serve_face', filename=case.photos[0].filename) }}" 
+                     alt="{{ case.name }}" class="case-photo" id="mainPhoto">
+                {% else %}
+                <div class="case-photo bg-light d-flex align-items-center justify-content-center">
+                    <i class="bi bi-person text-muted" style="font-size: 5rem;"></i>
+                </div>
+                {% endif %}
+                
+                {% if case.photos|length > 1 %}
+                <div class="d-flex justify-content-center flex-wrap mt-3">
+                    {% for photo in case.photos %}
+                    <img src="{{ url_for('serve_face', filename=photo.filename) }}" 
+                         alt="{{ case.name }}" class="photo-thumbnail"
+                         onclick="changeMainPhoto(this.src)">
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Case Information -->
+        <div class="info-card">
+            <h4>Case Information</h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="info-item">
+                        <div class="info-label">Name</div>
+                        <div class="info-value">{{ case.name }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Age</div>
+                        <div class="info-value">{{ case.age }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Gender</div>
+                        <div class="info-value">{{ case.gender }}</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-item">
+                        <div class="info-label">Status</div>
+                        <div class="info-value">
+                            <span class="case-status {% if case.status == 'found' %}status-open{% else %}status-closed{% endif %}">
+                                {{ case.status|title }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Last Seen Location</div>
+                        <div class="info-value">{{ case.last_seen_location }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Last Seen Date</div>
+                        <div class="info-value">{{ case.last_seen_date.strftime('%B %d, %Y') }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Guardian Information -->
+        <div class="info-card">
+            <h4>Guardian Information</h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="info-item">
+                        <div class="info-label">Guardian Name</div>
+                        <div class="info-value">{{ case.guardian_name }}</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-item">
+                        <div class="info-label">Guardian Phone</div>
+                        <div class="info-value">{{ case.guardian_phone }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if current_user.role == 'admin' %}
+        <!-- Admin Actions -->
+        <div class="admin-actions">
+            <h4>Admin Actions</h4>
+            <div class="d-flex gap-2">
+                <button class="btn btn-success" id="markFoundBtn">
+                    <i class="bi bi-check-circle"></i> Mark as Found
+                </button>
+                <button class="btn btn-warning" id="markMissingBtn">
+                    <i class="bi bi-exclamation-circle"></i> Mark as Missing
+                </button>
+                <button class="btn btn-danger" id="deleteCaseBtn">
+                    <i class="bi bi-trash"></i> Delete Case
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function changeMainPhoto(src) {
+        document.getElementById('mainPhoto').src = src;
+        document.querySelectorAll('.photo-thumbnail').forEach(thumb => {
+            thumb.classList.remove('active');
+            if (thumb.src === src) {
+                thumb.classList.add('active');
+            }
+        });
+    }
+
+    {% if current_user.role == 'admin' %}
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('markFoundBtn').addEventListener('click', function() {
+            updateStatus('found');
+        });
+
+        document.getElementById('markMissingBtn').addEventListener('click', function() {
+            updateStatus('missing');
+        });
+
+        document.getElementById('deleteCaseBtn').addEventListener('click', function() {
+            deleteCase();
+        });
+    });
+
+    function updateStatus(status) {
+        if (confirm(`Are you sure you want to mark this case as ${status}?`)) {
+            fetch(`/api/case/{{ case.id }}/status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: status })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Error updating status');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating case status. Please try again.');
+            });
+        }
+    }
+
+    function deleteCase() {
+        if (confirm('Are you sure you want to delete this case? This action cannot be undone.')) {
+            fetch(`/api/case/{{ case.id }}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Failed to delete case');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    window.location.href = "{{ url_for('view_cases') }}";
+                } else {
+                    alert(data.message || 'Error deleting case');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message || 'Error deleting case. Please try again.');
+            });
+        }
+    }
+    {% endif %}
+</script>
+{% endblock %} 

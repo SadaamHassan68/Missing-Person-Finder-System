@@ -1,0 +1,758 @@
+{% extends "dashboard_layout.html" %}
+
+{% block title %}Face Scan{% endblock %}
+
+{% block extra_css %}
+<style>
+    .scan-container {
+        position: relative;
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    #video {
+        width: 100%;
+        border-radius: 1rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58,59,69,0.1);
+    }
+
+    #canvas {
+        display: none;
+    }
+
+    .scan-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border: 2px solid var(--primary-color);
+        border-radius: 1rem;
+        pointer-events: none;
+    }
+
+    .scan-status {
+        position: absolute;
+        bottom: 1rem;
+        left: 1rem;
+        right: 1rem;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        text-align: center;
+    }
+
+    .controls {
+        margin-top: 1rem;
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .match-alert {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 0.5rem 2rem rgba(0,0,0,0.2);
+        z-index: 1000;
+        display: none;
+        min-width: 300px;
+    }
+
+    .match-alert.show {
+        display: block;
+    }
+
+    .match-details {
+        margin: 1rem 0;
+    }
+
+    .location-card {
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58,59,69,0.1);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .location-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        padding: 1rem;
+        font-weight: 600;
+    }
+
+    .location-content {
+        padding: 1.5rem;
+    }
+
+    .location-info {
+        display: flex;
+        align-items: start;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .location-icon {
+        width: 40px;
+        height: 40px;
+        background: rgba(65, 84, 241, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .location-icon i {
+        font-size: 1.25rem;
+        color: var(--primary-color);
+    }
+
+    .location-details {
+        flex: 1;
+    }
+
+    .location-address {
+        font-size: 1.1rem;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+    .location-meta {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+
+    .location-meta span {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .map-preview {
+        width: 100%;
+        height: 200px;
+        border-radius: 0.5rem;
+        margin-top: 1rem;
+        border: none;
+    }
+
+    .location-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .location-actions a {
+        flex: 1;
+        text-align: center;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .location-actions a.maps-link {
+        background: rgba(65, 84, 241, 0.1);
+        color: var(--primary-color);
+    }
+
+    .location-actions a.maps-link:hover {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .location-status.alert {
+        margin: 1rem 0;
+        border: none;
+    }
+
+    .location-status.alert-success {
+        background: rgba(28, 200, 138, 0.1);
+        border-left: 4px solid #1cc88a;
+    }
+
+    .location-status.alert-warning {
+        background: rgba(246, 194, 62, 0.1);
+        border-left: 4px solid #f6c23e;
+    }
+
+    .location-status.alert-danger {
+        background: rgba(231, 74, 59, 0.1);
+        border-left: 4px solid #e74a3b;
+    }
+
+    .notification-status {
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .notification-status.success {
+        background: rgba(28, 200, 138, 0.1);
+        color: var(--success-color);
+    }
+
+    .notification-status.error {
+        background: rgba(231, 74, 59, 0.1);
+        color: #e74a3b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Location Permission Modal -->
+    <div class="modal fade" id="locationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-geo-alt"></i> Ogolaanshaha Goobta
+                    </h5>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-4">
+                        <i class="bi bi-pin-map display-4 text-primary"></i>
+                    </div>
+                    <p>Si loo helo goobta aad joogto, fadlan ogolow in la isticmaalo GPS-ka.</p>
+                    <p class="text-muted small">Tani waxay naga caawinaysaa inaan si dhakhso leh u helno dadka maqan.</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-primary px-4" id="allowLocation">
+                        <i class="bi bi-check-lg"></i> Ogolow
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location Card -->
+    <div class="location-card mb-4">
+        <div class="location-header">
+            <i class="bi bi-geo-alt"></i> Goobta Hadda
+        </div>
+        <div class="location-content">
+            <div class="location-info">
+                <div class="location-icon">
+                    <i class="bi bi-pin-map"></i>
+                </div>
+                <div class="location-details">
+                    <div class="location-address" id="locationAddress">
+                        Goobta weli lama helin...
+                    </div>
+                    <div class="location-meta" id="locationMeta">
+                        <span><i class="bi bi-clock"></i> --</span>
+                    </div>
+                </div>
+            </div>
+            <div id="locationStatus" class="location-status alert alert-warning">
+                <i class="bi bi-geo-alt"></i> Sugaya ogolaanshaha goobta...
+            </div>
+            <iframe id="mapPreview" class="map-preview" frameborder="0" scrolling="no"></iframe>
+            <div class="location-actions">
+                <a href="#" class="maps-link" id="googleMapsLink" target="_blank">
+                    <i class="bi bi-map"></i> Fur Khariidada
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Face Scan Card -->
+    <div class="dashboard-card mb-4">
+        <div class="card-header">
+            <h6 class="m-0">Face Scan</h6>
+        </div>
+        <div class="card-body">
+            <div class="scan-container">
+                <video id="video" autoplay></video>
+                <canvas id="canvas"></canvas>
+                <div class="scan-overlay"></div>
+                <div class="scan-status">
+                    Initializing camera...
+                </div>
+            </div>
+            <div class="controls">
+                <button id="startScan" class="btn btn-primary" disabled>
+                    <i class="bi bi-camera"></i> Start Scan
+                </button>
+                <button id="stopScan" class="btn btn-secondary" disabled>
+                    <i class="bi bi-stop-circle"></i> Stop Scan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Match Alert Modal -->
+    <div id="matchAlert" class="match-alert">
+        <h4 class="text-center">
+            <i class="bi bi-person-check text-success"></i>
+            Match Found!
+        </h4>
+        <div class="match-details">
+            <p><strong>Name:</strong> <span id="matchName"></span></p>
+            <p><strong>Case ID:</strong> <span id="matchCaseId"></span></p>
+            <p><strong>Status:</strong> <span class="badge bg-warning">Missing</span></p>
+            <div id="notificationStatus"></div>
+        </div>
+        <div class="d-flex justify-content-end gap-2">
+            <button class="btn btn-secondary" onclick="closeMatchAlert()">Close</button>
+            <button id="retryNotification" class="btn btn-primary d-none" onclick="notifyGuardian()">
+                <i class="bi bi-send"></i> Retry Notification
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface"></script>
+<script>
+let stream;
+let isScanning = false;
+let locationData = null;
+let locationWatchId = null;
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const startButton = document.getElementById('startScan');
+const stopButton = document.getElementById('stopScan');
+const statusElement = document.querySelector('.scan-status');
+const locationStatus = document.getElementById('locationStatus');
+
+// Format address from OpenStreetMap data
+function formatAddress(osmData) {
+    const parts = [];
+    
+    // Add road/street name
+    if (osmData.road || osmData.street) {
+        parts.push(osmData.road || osmData.street);
+    }
+    
+    // Add neighborhood/suburb
+    if (osmData.suburb || osmData.neighbourhood) {
+        parts.push(osmData.suburb || osmData.neighbourhood);
+    }
+    
+    // Add city/town
+    if (osmData.city || osmData.town || osmData.village) {
+        parts.push(osmData.city || osmData.town || osmData.village);
+    }
+    
+    // Add state/region
+    if (osmData.state || osmData.region) {
+        parts.push(osmData.state || osmData.region);
+    }
+    
+    return parts.join(', ');
+}
+
+// Format time ago
+function timeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return `${Math.floor(seconds/60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds/3600)}h ago`;
+    return `${Math.floor(seconds/86400)}d ago`;
+}
+
+// Update map preview
+function updateMapPreview(lat, lon) {
+    const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lon-0.01}%2C${lat-0.01}%2C${lon+0.01}%2C${lat+0.01}&layer=mapnik&marker=${lat}%2C${lon}`;
+    document.getElementById('mapPreview').src = mapUrl;
+    
+    const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+    const mapsLink = document.getElementById('googleMapsLink');
+    mapsLink.href = googleMapsUrl;
+}
+
+// Show location permission modal
+function showLocationModal() {
+    const modal = new bootstrap.Modal(document.getElementById('locationModal'));
+    modal.show();
+    
+    // Handle allow button click
+    document.getElementById('allowLocation').addEventListener('click', () => {
+        modal.hide();
+        requestLocation();
+    });
+}
+
+// Request location permission
+function requestLocation() {
+    const locationStatus = document.getElementById('locationStatus');
+    locationStatus.innerHTML = `
+        <i class="bi bi-arrow-clockwise"></i> 
+        Goobta la raadinayaa...
+    `;
+    
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            updateLocation,
+            handleLocationError,
+            { 
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+        
+        // Watch for location changes
+        locationWatchId = navigator.geolocation.watchPosition(
+            updateLocation,
+            handleLocationError,
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 30000
+            }
+        );
+    } else {
+        handleLocationError({ message: 'GPS-ku ma shaqeynayo telefoonkaaga' });
+    }
+}
+
+// Format simple Somali address
+function formatSomaliAddress(osmData) {
+    const parts = [];
+    
+    // Add nearby landmark or building
+    if (osmData.amenity || osmData.building) {
+        parts.push(osmData.amenity || osmData.building);
+    }
+    
+    // Add street/road
+    if (osmData.road) {
+        parts.push(osmData.road);
+    }
+    
+    // Add neighborhood
+    if (osmData.suburb || osmData.neighbourhood) {
+        parts.push(osmData.suburb || osmData.neighbourhood);
+    }
+    
+    // Add district/city
+    if (osmData.city || osmData.district) {
+        parts.push(osmData.city || osmData.district);
+    }
+    
+    return parts.join(', ') || 'Goob aan la aqoon';
+}
+
+// Update location display
+function updateLocationDisplay(position, address) {
+    const locationAddress = document.getElementById('locationAddress');
+    const locationMeta = document.getElementById('locationMeta');
+    const timestamp = new Date();
+
+    // Update address in Somali
+    locationAddress.textContent = address || 'Goobta la raadinayaa...';
+
+    // Update time in Somali
+    locationMeta.innerHTML = `
+        <span><i class="bi bi-clock"></i> La helay: ${timeAgo(timestamp)}</span>
+    `;
+
+    // Update map
+    updateMapPreview(position.coords.latitude, position.coords.longitude);
+}
+
+// Update location data
+async function updateLocation(position) {
+    try {
+        // Debug log
+        console.log('Raw position:', {
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+            acc: position.coords.accuracy
+        });
+        
+                locationData = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+                    timestamp: new Date().toISOString()
+                };
+                
+        // Update initial display
+        updateLocationDisplay(position, 'Goobta la raadinayaa...');
+        
+        // Get address details
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${locationData.latitude}&lon=${locationData.longitude}&addressdetails=1`,
+            { headers: { 'Accept-Language': 'so' } }
+        );
+        
+        // Log the response from OpenStreetMap
+        const data = await response.json();
+        console.log('OpenStreetMap response:', data);
+        
+        // Format and store address data
+        locationData.address = formatSomaliAddress(data.address);
+        locationData.fullAddress = data.display_name;
+        locationData.addressDetails = data.address;
+        
+        // Log formatted address
+        console.log('Formatted address:', locationData.address);
+        
+        // Update display with Somali address
+        updateLocationDisplay(position, locationData.address);
+        
+        // Update status in Somali
+        const locationStatus = document.getElementById('locationStatus');
+        locationStatus.innerHTML = `
+            <i class="bi bi-check-circle-fill"></i> 
+            Goobta waa la helay
+        `;
+        locationStatus.className = 'location-status alert alert-success';
+    } catch (error) {
+        // Log any errors in detail
+        console.error('Detailed error getting location:', error);
+        updateLocationDisplay(position, 'Goob aan la aqoon');
+        
+        const locationStatus = document.getElementById('locationStatus');
+        locationStatus.innerHTML = `
+            <i class="bi bi-exclamation-circle-fill"></i> 
+            Goobta lama helin si sax ah
+        `;
+        locationStatus.className = 'location-status alert alert-warning';
+    }
+}
+
+// Handle location errors in Somali
+function handleLocationError(error) {
+    // Log detailed error information
+    console.error('Location error details:', {
+        code: error.code,
+        message: error.message,
+        PERMISSION_DENIED: error.PERMISSION_DENIED,
+        POSITION_UNAVAILABLE: error.POSITION_UNAVAILABLE,
+        TIMEOUT: error.TIMEOUT
+    });
+    
+    const locationStatus = document.getElementById('locationStatus');
+    locationStatus.innerHTML = `
+        <i class="bi bi-exclamation-triangle-fill text-danger"></i> 
+        Ma awoodin inaan helo goobta: ${error.message}
+        <br>
+        <small class="text-muted">Fadlan hubi in GPS-ka uu furan yahay.</small>
+    `;
+    locationStatus.className = 'location-status alert alert-danger';
+}
+
+// Clean up location watch when page unloads
+window.addEventListener('beforeunload', () => {
+    if (locationWatchId !== null) {
+        navigator.geolocation.clearWatch(locationWatchId);
+    }
+});
+
+// Initialize camera
+async function initCamera() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'user',
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            } 
+        });
+        video.srcObject = stream;
+        startButton.disabled = false;
+        statusElement.textContent = 'Camera ready. Click Start Scan to begin.';
+    } catch (error) {
+        statusElement.textContent = `Camera error: ${error.message}`;
+    }
+}
+
+// Start face scanning
+async function startScan() {
+    if (!isScanning) {
+        isScanning = true;
+        startButton.disabled = true;
+        stopButton.disabled = false;
+        statusElement.textContent = 'Scanning...';
+        
+        // Load face detection model
+        const model = await blazeface.load();
+        
+        // Scanning loop
+        const scan = async () => {
+            if (!isScanning) return;
+            
+            // Detect faces
+            const predictions = await model.estimateFaces(video, false);
+            
+            if (predictions.length > 0) {
+                // Capture face image
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0);
+                
+                // Send to server for matching
+                const imageData = canvas.toDataURL('image/jpeg');
+                const response = await fetch('/api/match_face', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        image: imageData,
+                        location: locationData
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.match) {
+                    showMatchAlert(result.person);
+                    stopScan();
+                }
+            }
+            
+            requestAnimationFrame(scan);
+        };
+        
+        scan();
+    }
+}
+
+// Stop scanning
+function stopScan() {
+    isScanning = false;
+    startButton.disabled = false;
+    stopButton.disabled = true;
+    statusElement.textContent = 'Scan stopped. Click Start Scan to begin again.';
+}
+
+// Show match alert
+function showMatchAlert(person) {
+    const matchAlert = document.getElementById('matchAlert');
+    const notificationStatus = document.getElementById('notificationStatus');
+    const retryButton = document.getElementById('retryNotification');
+    
+    document.getElementById('matchName').textContent = person.name;
+    document.getElementById('matchCaseId').textContent = person.case_id;
+    
+    // Show notification status
+    if (person.notification_sent) {
+        notificationStatus.className = 'notification-status success';
+        notificationStatus.innerHTML = '<i class="bi bi-check-circle"></i> Guardian has been automatically notified';
+        retryButton.classList.add('d-none');
+        
+        // Start checking delivery status if we have a message ID
+        if (person.message_id) {
+            checkDeliveryStatus(person.message_id);
+        }
+    } else {
+        notificationStatus.className = 'notification-status error';
+        notificationStatus.innerHTML = `<i class="bi bi-exclamation-triangle"></i> Failed to notify guardian: ${person.notification_error}`;
+        retryButton.classList.remove('d-none');
+    }
+    
+    matchAlert.classList.add('show');
+}
+
+// Check SMS delivery status
+async function checkDeliveryStatus(messageId) {
+    const notificationStatus = document.getElementById('notificationStatus');
+    const retryButton = document.getElementById('retryNotification');
+    
+    try {
+        const response = await fetch(`/api/sms/status/${messageId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            switch (data.status) {
+                case 'delivered':
+                    notificationStatus.className = 'notification-status success';
+                    notificationStatus.innerHTML = '<i class="bi bi-check-circle"></i> SMS delivered successfully';
+                    retryButton.classList.add('d-none');
+                    break;
+                case 'failed':
+                    notificationStatus.className = 'notification-status error';
+                    notificationStatus.innerHTML = `<i class="bi bi-exclamation-triangle"></i> SMS delivery failed: ${data.details}`;
+                    retryButton.classList.remove('d-none');
+                    break;
+                case 'sent':
+                    notificationStatus.className = 'notification-status info';
+                    notificationStatus.innerHTML = '<i class="bi bi-info-circle"></i> SMS sent, waiting for delivery confirmation';
+                    // Check again after 5 seconds
+                    setTimeout(() => checkDeliveryStatus(messageId), 5000);
+                    break;
+                default:
+                    notificationStatus.className = 'notification-status warning';
+                    notificationStatus.innerHTML = '<i class="bi bi-question-circle"></i> SMS status unknown';
+                    // Check again after 5 seconds
+                    setTimeout(() => checkDeliveryStatus(messageId), 5000);
+            }
+        } else {
+            notificationStatus.className = 'notification-status error';
+            notificationStatus.innerHTML = `<i class="bi bi-exclamation-triangle"></i> Failed to check SMS status: ${data.error}`;
+        }
+    } catch (error) {
+        console.error('Error checking SMS status:', error);
+        notificationStatus.className = 'notification-status error';
+        notificationStatus.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Error checking SMS status';
+    }
+}
+
+// Close match alert
+function closeMatchAlert() {
+    document.getElementById('matchAlert').classList.remove('show');
+}
+
+// Notify guardian (retry)
+async function notifyGuardian() {
+    const response = await fetch('/api/notify_guardian', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            case_id: document.getElementById('matchCaseId').textContent,
+            location: locationData
+        })
+    });
+    
+    const result = await response.json();
+    const notificationStatus = document.getElementById('notificationStatus');
+    const retryButton = document.getElementById('retryNotification');
+    
+    if (result.success) {
+        notificationStatus.className = 'notification-status info';
+        notificationStatus.innerHTML = '<i class="bi bi-info-circle"></i> SMS sent, waiting for delivery confirmation';
+        retryButton.classList.add('d-none');
+        
+        // Start checking delivery status
+        if (result.message_id) {
+            checkDeliveryStatus(result.message_id);
+        }
+    } else {
+        notificationStatus.className = 'notification-status error';
+        notificationStatus.innerHTML = `<i class="bi bi-exclamation-triangle"></i> Failed to notify guardian: ${result.error}`;
+    }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    initCamera();
+    showLocationModal();
+});
+
+// Event listeners
+startButton.addEventListener('click', startScan);
+stopButton.addEventListener('click', stopScan);
+</script>
+{% endblock %} 

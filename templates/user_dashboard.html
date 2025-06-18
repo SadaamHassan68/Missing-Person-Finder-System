@@ -1,0 +1,241 @@
+{% extends "dashboard_layout.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        height: 100%;
+        transition: transform 0.2s;
+        border: none;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58,59,69,0.1);
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stats-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--primary-color);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+    .stats-icon i {
+        font-size: 24px;
+        color: white;
+    }
+
+    .stats-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .stats-label {
+        color: var(--secondary-color);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .quick-action {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: white;
+        border-radius: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        color: inherit;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .quick-action:hover {
+        transform: translateX(5px);
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .quick-action i {
+        font-size: 1.5rem;
+        margin-right: 1rem;
+    }
+
+    .case-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border: 1px solid rgba(0,0,0,0.05);
+        transition: all 0.2s;
+    }
+
+    .case-card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1);
+        transform: translateY(-3px);
+    }
+
+    .case-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .status-open {
+        background: rgba(28, 200, 138, 0.1);
+        color: var(--success-color);
+    }
+
+    .status-closed {
+        background: rgba(231, 74, 59, 0.1);
+        color: #e74a3b;
+    }
+
+    .welcome-banner {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #224abe 100%);
+        border-radius: 1rem;
+        padding: 2rem;
+        color: white;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .welcome-banner::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="0" cy="0" r="50" fill="rgba(255,255,255,0.1)"/></svg>') no-repeat;
+        background-position: right -20px top -20px;
+        background-size: 200px 200px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--secondary-color);
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Welcome Banner -->
+<div class="welcome-banner">
+    <h1 class="h3 mb-0">Welcome back, {{ current_user.name }}!</h1>
+    <p class="mb-0 opacity-75">Here's what's happening with your cases</p>
+</div>
+
+<!-- Statistics Row -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stats-card">
+            <div class="stats-icon">
+                <i class="bi bi-folder"></i>
+            </div>
+            <div class="stats-number">{{ user_cases|length }}</div>
+            <div class="stats-label">My Cases</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stats-card">
+            <div class="stats-icon" style="background: var(--success-color)">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="stats-number">{{ user_cases|selectattr('status', 'equalto', 'Resolved')|list|length }}</div>
+            <div class="stats-label">Resolved Cases</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stats-card">
+            <div class="stats-icon" style="background: #e74a3b">
+                <i class="bi bi-clock-history"></i>
+            </div>
+            <div class="stats-number">{{ user_cases|selectattr('status', 'equalto', 'Open')|list|length }}</div>
+            <div class="stats-label">Open Cases</div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Cases -->
+    <div class="col-lg-8">
+        <div class="dashboard-card mb-4">
+            <div class="card-header">
+                <h6 class="m-0">Recent Cases</h6>
+                <a href="{{ url_for('view_cases') }}" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if user_cases %}
+                    {% for case in user_cases[:5] %}
+                    <div class="case-card">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">{{ case.name }}</h6>
+                            <span class="case-status {% if case.status == 'Open' %}status-open{% else %}status-closed{% endif %}">
+                                {{ case.status }}
+                            </span>
+                        </div>
+                        <p class="mb-2 text-secondary">Age: {{ case.age }} | Gender: {{ case.gender }} | Last seen: {{ case.last_seen_location }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">Last seen date: {{ case.last_seen_date.strftime('%B %d, %Y') }}</small>
+                            <a href="{{ url_for('case_details', case_id=case.id) }}" class="btn btn-sm btn-outline-primary">View Details</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="bi bi-folder2-open"></i>
+                        <h5>No Cases Yet</h5>
+                        <p class="text-muted">Start by creating your first case</p>
+                        <a href="{{ url_for('new_case') }}" class="btn btn-primary">Create Case</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-lg-4">
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h6 class="m-0">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('new_case') }}" class="quick-action">
+                    <i class="bi bi-plus-circle"></i>
+                    <div>
+                        <h6 class="mb-0">Report New Case</h6>
+                        <small class="text-muted">Create a new missing person case</small>
+                    </div>
+                </a>
+                <a href="{{ url_for('scan') }}" class="quick-action">
+                    <i class="bi bi-camera"></i>
+                    <div>
+                        <h6 class="mb-0">Face Scan</h6>
+                        <small class="text-muted">Scan faces to find matches</small>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
