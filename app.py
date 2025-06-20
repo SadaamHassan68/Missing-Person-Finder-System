@@ -21,12 +21,12 @@ import io
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, SelectField, DateField, MultipleFileField
 from wtforms.validators import DataRequired, NumberRange
-<<<<<<< HEAD
+
 import face_recognition
 import pickle
 import secrets
-=======
->>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
+
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'
@@ -82,7 +82,7 @@ def save_face_encodings(encodings_data):
 
 # Load face encodings at startup
 face_encodings_data = load_face_encodings()
-=======
+
 # Initialize encodings dictionary
 if os.path.exists(ENCODINGS_FILE):
     try:
@@ -135,7 +135,7 @@ if os.path.exists(ENCODINGS_FILE):
 else:
     app.logger.info(f"{ENCODINGS_FILE} does not exist, initializing empty encodings")
     encodings_data = {"ids": [], "encodings": []}
->>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
+
 
 # Initialize user data dictionary
 if os.path.exists(USER_DATA_FILE):
@@ -212,7 +212,7 @@ def login():
             return redirect(url_for('login'))
     return render_template('login.html')
 
-<<<<<<< HEAD
+
 # Admin registration token - change this to a secure random string in production
 ADMIN_REGISTRATION_TOKEN = secrets.token_urlsafe(32)
 
@@ -222,10 +222,10 @@ def register_admin(token):
         flash('Invalid registration token', 'error')
         return redirect(url_for('index'))
     
-=======
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
->>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
+
     if request.method == 'POST':
         username = request.form.get('username')
         email = request.form.get('email')
@@ -233,37 +233,37 @@ def register():
         
         if User.query.filter_by(email=email).first():
             flash('Email already registered', 'error')
-<<<<<<< HEAD
+
             return redirect(url_for('register_admin', token=token))
-=======
+
             return redirect(url_for('register'))
->>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
+
         
         user = User(
             username=username,
             email=email,
-<<<<<<< HEAD
+
             password=generate_password_hash(password),
             role='admin'  # Set role as admin
-=======
+
             password=generate_password_hash(password)
->>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
+
+
         )
         db.session.add(user)
         db.session.commit()
         
-<<<<<<< HEAD
         log_activity('admin_registration', f'New admin registered: {username}')
         flash('Admin registration successful! Please login.', 'success')
         return redirect(url_for('login'))
     
     return render_template('register_admin.html')
-=======
+
         log_activity('registration', f'New user registered: {username}')
         flash('Registration successful! Please login.', 'success')
         return redirect(url_for('login'))
     return render_template('register.html')
->>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
+
 
 @app.route('/dashboard')
 @login_required
@@ -350,7 +350,7 @@ def new_case():
                 photo_path = os.path.join('data/faces', filename)
                 photo.save(photo_path)
                 
-<<<<<<< HEAD
+
                 # Load image and detect face
                 image = face_recognition.load_image_file(photo_path)
                 face_locations = face_recognition.face_locations(image)
@@ -370,7 +370,7 @@ def new_case():
                         'right': int(face_locations[0][1]),
                         'bottom': int(face_locations[0][2]),
                         'left': int(face_locations[0][3])
-=======
+
                 # Detect faces using OpenCV
                 image = cv2.imread(photo_path)
                 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -391,7 +391,7 @@ def new_case():
                         'y': int(max_face[1]),
                         'w': int(max_face[2]),
                         'h': int(max_face[3])
->>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
+
                     }
                     
                     photo_record = Photo(
@@ -507,7 +507,7 @@ def api_scan():
                         'notification_error': None if success else message,
                         'message_id': message_id
                     })
-=======
+
         # Convert to grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         
@@ -606,7 +606,7 @@ def api_scan():
                             'notification_error': None if success else message,
                             'message_id': message_id
                         })
->>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
+
         
         return jsonify({
             "success": True, 
@@ -1068,7 +1068,7 @@ def export_data(format):
         flash('Invalid export format', 'error')
         return redirect(url_for('reports'))
 
-<<<<<<< HEAD
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -1093,7 +1093,6 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html')
 
-=======
->>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
+
 if __name__ == '__main__':
     app.run(debug=True) 
