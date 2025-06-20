@@ -1,0 +1,271 @@
+{% extends "dashboard_layout.html" %}
+
+{% block title %}Register New Case{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background: white;
+        border-radius: 1rem;
+        padding: 2rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58,59,69,0.1);
+    }
+
+    .form-section {
+        margin-bottom: 2rem;
+    }
+
+    .form-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .form-section h5 {
+        color: #4e73df;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #4e73df;
+    }
+
+    .required-field::after {
+        content: "*";
+        color: #e74a3b;
+        margin-left: 0.25rem;
+    }
+
+    .photo-upload {
+        border: 2px dashed #dee2e6;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .photo-upload:hover {
+        border-color: #4e73df;
+        background: rgba(78, 115, 223, 0.05);
+    }
+
+    .photo-upload i {
+        font-size: 2rem;
+        color: #858796;
+        margin-bottom: 1rem;
+    }
+
+    .photo-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .preview-item {
+        position: relative;
+        width: 100px;
+        height: 100px;
+    }
+
+    .preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 0.5rem;
+    }
+
+    .preview-item .remove-photo {
+        position: absolute;
+        top: -0.5rem;
+        right: -0.5rem;
+        background: #e74a3b;
+        color: white;
+        border-radius: 50%;
+        width: 1.5rem;
+        height: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.875rem;
+    }
+
+    .invalid-feedback {
+        display: block;
+        color: #e74a3b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Register New Case</h1>
+    <a href="{{ url_for('view_cases') }}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left"></i> Back to Cases
+    </a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<form class="form-container" method="POST" enctype="multipart/form-data">
+    {{ form.csrf_token }}
+    
+    <div class="row g-4">
+        <!-- Person Details -->
+        <div class="col-md-6">
+            <div class="form-section">
+                <h5>Person Details</h5>
+                
+                <div class="mb-3">
+                    <label class="form-label required-field">{{ form.name.label }}</label>
+                    {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                    {% if form.name.errors %}
+                        {% for error in form.name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label required-field">{{ form.age.label }}</label>
+                    {{ form.age(class="form-control" + (" is-invalid" if form.age.errors else "")) }}
+                    {% if form.age.errors %}
+                        {% for error in form.age.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label required-field">{{ form.gender.label }}</label>
+                    {{ form.gender(class="form-select" + (" is-invalid" if form.gender.errors else "")) }}
+                    {% if form.gender.errors %}
+                        {% for error in form.gender.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label required-field">{{ form.last_seen_location.label }}</label>
+                    {{ form.last_seen_location(class="form-control" + (" is-invalid" if form.last_seen_location.errors else "")) }}
+                    {% if form.last_seen_location.errors %}
+                        {% for error in form.last_seen_location.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Case Details -->
+        <div class="col-md-6">
+            <div class="form-section">
+                <h5>Case Details</h5>
+                
+                <div class="mb-3">
+                    <label class="form-label required-field">{{ form.last_seen_date.label }}</label>
+                    {{ form.last_seen_date(class="form-control" + (" is-invalid" if form.last_seen_date.errors else ""), type="date") }}
+                    {% if form.last_seen_date.errors %}
+                        {% for error in form.last_seen_date.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label required-field">{{ form.guardian_name.label }}</label>
+                    {{ form.guardian_name(class="form-control" + (" is-invalid" if form.guardian_name.errors else "")) }}
+                    {% if form.guardian_name.errors %}
+                        {% for error in form.guardian_name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label required-field">{{ form.guardian_phone.label }}</label>
+                    {{ form.guardian_phone(class="form-control" + (" is-invalid" if form.guardian_phone.errors else "")) }}
+                    {% if form.guardian_phone.errors %}
+                        {% for error in form.guardian_phone.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Photos -->
+        <div class="col-12">
+            <div class="form-section">
+                <h5>Photos</h5>
+                
+                <div class="photo-upload" onclick="document.getElementById('photos').click()">
+                    <i class="bi bi-cloud-upload"></i>
+                    <h6>Click to Upload Photos</h6>
+                    <p class="text-muted mb-0">Upload clear photos of the missing person</p>
+                    {{ form.photos(id="photos", style="display: none", onchange="previewPhotos(this)") }}
+                </div>
+                
+                <div class="photo-preview" id="photoPreview"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-end mt-4">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Register Case
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function previewPhotos(input) {
+        const preview = document.getElementById('photoPreview');
+        preview.innerHTML = '';
+        
+        if (input.files) {
+            Array.from(input.files).forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'preview-item';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview">
+                        <div class="remove-photo" onclick="removePhoto(${index})">
+                            <i class="bi bi-x"></i>
+                        </div>
+                    `;
+                    preview.appendChild(div);
+                }
+                reader.readAsDataURL(file);
+            });
+        }
+    }
+    
+    function removePhoto(index) {
+        const input = document.getElementById('photos');
+        const dt = new DataTransfer();
+        const { files } = input;
+        
+        for (let i = 0; i < files.length; i++) {
+            if (i !== index) {
+                dt.items.add(files[i]);
+            }
+        }
+        
+        input.files = dt.files;
+        previewPhotos(input);
+    }
+</script>
+{% endblock %} 

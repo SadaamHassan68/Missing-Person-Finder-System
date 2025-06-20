@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - FindFace{% endblock %}
+
+{% block head %}
+<style>
+    .stats-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stats-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+    .stats-icon i {
+        font-size: 1.5rem;
+        color: white;
+    }
+
+    .stats-title {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .stats-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #212529;
+        margin-bottom: 0.5rem;
+    }
+
+    .stats-trend {
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .trend-up {
+        color: #10b981;
+    }
+
+    .trend-down {
+        color: #ef4444;
+    }
+
+    .activity-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        height: 100%;
+    }
+
+    .activity-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #212529;
+    }
+
+    .activity-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .activity-item {
+        padding: 1rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(67, 97, 238, 0.1);
+    }
+
+    .activity-icon i {
+        color: var(--primary-color);
+        font-size: 1.2rem;
+    }
+
+    .activity-content {
+        flex: 1;
+    }
+
+    .activity-text {
+        margin: 0;
+        color: #212529;
+    }
+
+    .activity-time {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+
+    .chart-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        height: 100%;
+    }
+
+    .chart-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #212529;
+    }
+    
+    .section-title {
+        font-weight: 700;
+        color: #212529;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h2 class="section-title mb-4">Dashboard</h2>
+
+    <!-- Stats Row -->
+    <div class="row g-4 mb-4">
+        <!-- Total Cases -->
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #4361ee, #4895ef);">
+                    <i class="fas fa-folder"></i>
+                </div>
+                <div class="stats-title">Total Cases</div>
+                <div class="stats-value">150</div>
+            </div>
+        </div>
+
+        <!-- Active Cases -->
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #f72585, #b5179e);">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="stats-title">Active Cases</div>
+                <div class="stats-value">45</div>
+            </div>
+        </div>
+
+        <!-- Found Cases -->
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #4cc9f0, #4895ef);">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stats-title">Found Cases</div>
+                <div class="stats-value">98</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row g-4">
+        <!-- Recent Cases -->
+        <div class="col-md-6">
+            <div class="activity-card">
+                <h3 class="activity-title">Recent Cases</h3>
+                <div class="activity-list">
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p class="activity-text">John Doe</p>
+                            <span class="activity-time">Case #12345</span>
+                            <br>
+                            <span class="badge bg-success">
+                                found
+                            </span>
+                        </div>
+                        <a href="#" class="btn btn-sm btn-primary">
+                            View
+                        </a>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p class="activity-text">Jane Smith</p>
+                            <span class="activity-time">Case #12346</span>
+                            <br>
+                            <span class="badge bg-warning">
+                                active
+                            </span>
+                        </div>
+                        <a href="#" class="btn btn-sm btn-primary">
+                            View
+                        </a>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p class="activity-text">Robert Johnson</p>
+                            <span class="activity-time">Case #12347</span>
+                            <br>
+                            <span class="badge bg-success">
+                                found
+                            </span>
+                        </div>
+                        <a href="#" class="btn btn-sm btn-primary">
+                            View
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Recognitions -->
+        <div class="col-md-6">
+            <div class="activity-card">
+                <h3 class="activity-title">Recent Recognitions</h3>
+                <div class="activity-list">
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p class="activity-text">John Doe</p>
+                            <span class="activity-time">
+                                Confidence: 98.5%
+                            </span>
+                            <br>
+                            <small class="text-muted">2 minutes ago</small>
+                        </div>
+                        <a href="#" class="btn btn-sm btn-primary">
+                            View
+                        </a>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p class="activity-text">Jane Smith</p>
+                            <span class="activity-time">
+                                Confidence: 95.2%
+                            </span>
+                            <br>
+                            <small class="text-muted">15 minutes ago</small>
+                        </div>
+                        <a href="#" class="btn btn-sm btn-primary">
+                            View
+                        </a>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p class="activity-text">Unknown</p>
+                            <span class="activity-time">
+                                Confidence: 45.8%
+                            </span>
+                            <br>
+                            <small class="text-muted">1 hour ago</small>
+                        </div>
+                        <a href="#" class="btn btn-sm btn-primary">
+                            View
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add any dashboard-specific JavaScript here
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Scanner - Missing Person Finder</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(180deg, #4e73df 10%, #224abe 100%);
+            padding-top: 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            z-index: 1;
+        }
+
+        .sidebar-brand {
+            color: white;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: 800;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.05rem;
+            padding: 1.5rem 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .sidebar hr {
+            margin: 0 1rem 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .sidebar-heading {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 0 1rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .sidebar a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            padding: 0.8rem 1rem;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .sidebar a:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar a.active {
+            color: white;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar i {
+            margin-right: 0.75rem;
+            font-size: 1rem;
+            width: 1.5rem;
+            text-align: center;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 1.5rem;
+            background: #f8f9fc;
+            min-height: 100vh;
+        }
+
+        #video-container {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 0.35rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            padding: 1rem;
+        }
+
+        #video {
+            width: 100%;
+            border-radius: 0.35rem;
+        }
+
+        #preview-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        #capture-canvas {
+            display: none;
+        }
+
+        .match-card {
+            background: white;
+            border-radius: 0.35rem;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            border-left: 0.25rem solid #4e73df;
+        }
+
+        .confidence-high {
+            color: #1cc88a;
+            font-weight: bold;
+        }
+
+        .confidence-medium {
+            color: #f6c23e;
+            font-weight: bold;
+        }
+
+        .confidence-low {
+            color: #e74a3b;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: #4e73df;
+            border-color: #4e73df;
+        }
+
+        .btn-primary:hover {
+            background: #2e59d9;
+            border-color: #2e59d9;
+        }
+
+        .card {
+            border: none;
+            border-radius: 0.35rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+
+        .card-header {
+            background: white;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 1rem 1.25rem;
+            font-weight: 700;
+            color: #4e73df;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <div class="sidebar">
+            <a href="#" class="sidebar-brand">
+                <i class="bi bi-people-fill"></i>
+                Missing Person Finder
+            </a>
+            <hr>
+            <div class="sidebar-heading">Core</div>
+            <nav>
+                <a href="{{ url_for('dashboard') }}">
+                    <i class="bi bi-speedometer2"></i>
+                    Dashboard
+                </a>
+                <a href="{{ url_for('new_case') }}">
+                    <i class="bi bi-person-plus"></i>
+                    Register Case
+                </a>
+                <a href="{{ url_for('view_cases') }}">
+                    <i class="bi bi-list-ul"></i>
+                    View Cases
+                </a>
+                <a href="{{ url_for('scan') }}" class="active">
+                    <i class="bi bi-camera"></i>
+                    Scan Faces
+                </a>
+            </nav>
+            <hr>
+            <div class="sidebar-heading">User</div>
+            <nav>
+                <a href="{{ url_for('profile') }}">
+                    <i class="bi bi-person"></i>
+                    Profile
+                </a>
+                <a href="{{ url_for('logout') }}">
+                    <i class="bi bi-box-arrow-right"></i>
+                    Logout
+                </a>
+            </nav>
+        </div>
+
+        <div class="main-content">
+            <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                <h1 class="h3 mb-0 text-gray-800">Face Scanner</h1>
+    </div>
+
+            <div class="row">
+        <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <i class="bi bi-camera-fill me-1"></i>
+                            Camera Feed
+                        </div>
+                        <div class="card-body">
+                            <div id="video-container">
+                                <video id="video" autoplay playsinline></video>
+                                <canvas id="preview-canvas"></canvas>
+                                <canvas id="capture-canvas"></canvas>
+                            </div>
+                            <div class="text-center mt-3">
+                                <button id="scan-button" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-camera"></i> Scan Face
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-search me-1"></i>
+                            Matches
+                        </div>
+                        <div class="card-body">
+                            <div id="matches-list">
+                                <div class="text-center text-gray-500">
+                                    <i class="bi bi-camera" style="font-size: 2rem;"></i>
+                                    <p class="mt-2">Scan a face to find matches</p>
+            </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+        let videoStream;
+        const video = document.getElementById('video');
+        const previewCanvas = document.getElementById('preview-canvas');
+        const captureCanvas = document.getElementById('capture-canvas');
+        const previewCtx = previewCanvas.getContext('2d');
+        const captureCtx = captureCanvas.getContext('2d');
+
+        // Get video stream
+        async function setupCamera() {
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: "user"
+                    } 
+                });
+                video.srcObject = videoStream;
+                
+                // Set canvas sizes after video loads
+                video.onloadedmetadata = () => {
+                    previewCanvas.width = video.videoWidth;
+                    previewCanvas.height = video.videoHeight;
+                    captureCanvas.width = video.videoWidth;
+                    captureCanvas.height = video.videoHeight;
+                    
+                    // Start face detection preview
+                    detectFacesPreview();
+                };
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                alert('Error accessing camera. Please make sure you have granted camera permissions.');
+            }
+        }
+
+        // Continuously detect faces in preview
+        async function detectFacesPreview() {
+            if (videoStream && video.readyState === 4) {
+                // Clear previous drawing
+                previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                
+                // Draw video frame
+                previewCtx.drawImage(video, 0, 0, previewCanvas.width, previewCanvas.height);
+                
+                // Draw face detection rectangle
+                previewCtx.strokeStyle = '#00ff00';
+                previewCtx.lineWidth = 3;
+                previewCtx.strokeRect(
+                    previewCanvas.width * 0.25,
+                    previewCanvas.height * 0.15,
+                    previewCanvas.width * 0.5,
+                    previewCanvas.height * 0.7
+                );
+            }
+            requestAnimationFrame(detectFacesPreview);
+        }
+
+        // Capture image from video
+        function captureImage() {
+            captureCtx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+            return captureCanvas.toDataURL('image/jpeg', 0.9);
+        }
+
+        // Send image to server for scanning
+        async function scanFace() {
+            const imageData = captureImage();
+            const scanButton = document.getElementById('scan-button');
+            const matchesList = document.getElementById('matches-list');
+            
+            scanButton.disabled = true;
+            scanButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Scanning...';
+            matchesList.innerHTML = '<div class="text-center"><div class="spinner-border"></div></div>';
+            
+            try {
+                // Get location data
+                let locationData = {
+                    latitude: '0',
+                    longitude: '0',
+                    address: 'Unknown location'
+                };
+                
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject);
+                    });
+                    
+                    locationData = {
+                        latitude: position.coords.latitude.toString(),
+                        longitude: position.coords.longitude.toString()
+                    };
+                    
+                    // Get address using reverse geocoding
+                    const geoResponse = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${locationData.latitude}&lon=${locationData.longitude}`
+                    );
+                    const geoData = await geoResponse.json();
+                    locationData.address = geoData.display_name;
+                } catch (error) {
+                    console.warn('Error getting location:', error);
+                }
+                
+                // Create form data
+                const formData = new FormData();
+                formData.append('face_image', imageData);
+                formData.append('latitude', locationData.latitude);
+                formData.append('longitude', locationData.longitude);
+                formData.append('address', locationData.address);
+                
+                const response = await fetch('/api/scan', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    matchesList.innerHTML = '';
+                    if (data.matches.length > 0) {
+                        data.matches.sort((a, b) => b.match_confidence - a.match_confidence);
+                        data.matches.forEach(match => {
+                            const confidenceClass = 
+                                match.match_confidence >= 80 ? 'confidence-high' :
+                                match.match_confidence >= 60 ? 'confidence-medium' :
+                                'confidence-low';
+                            
+                            const notificationStatus = match.notification_sent ?
+                                `<div class="alert alert-success">
+                                    <i class="bi bi-check-circle"></i> SMS sent to guardian
+                                    <div class="sms-status" data-message-id="${match.message_id}">
+                                        <small><i class="bi bi-clock"></i> Checking delivery status...</small>
+                                    </div>
+                                </div>` :
+                                `<div class="alert alert-danger">
+                                    <i class="bi bi-exclamation-triangle"></i> Failed to send SMS: ${match.notification_error}
+                                    <button class="btn btn-sm btn-danger mt-2 retry-sms" data-case-id="${match.case_id}">
+                                        <i class="bi bi-arrow-repeat"></i> Retry
+                                    </button>
+                                </div>`;
+                            
+                            const matchCard = document.createElement('div');
+                            matchCard.className = 'match-card';
+                            matchCard.innerHTML = `
+                                <h5>${match.name}</h5>
+                                <p>Age: ${match.age} | Gender: ${match.gender}</p>
+                                <p>Last Seen: ${match.last_seen_location}</p>
+                                <p>Date: ${match.last_seen_date}</p>
+                                <p>Guardian: ${match.guardian_name}</p>
+                                <p>Phone: ${match.guardian_phone}</p>
+                                <p>Match Confidence: <span class="${confidenceClass}">${match.match_confidence.toFixed(1)}%</span></p>
+                                ${notificationStatus}
+                                <a href="/case/${match.case_id}" class="btn btn-primary btn-sm">View Case</a>
+                            `;
+                            matchesList.appendChild(matchCard);
+                            
+                            // If SMS was sent, start checking delivery status
+                            if (match.notification_sent && match.message_id) {
+                                checkDeliveryStatus(match.message_id);
+                            }
+                        });
+                        
+                        // Add event listeners for retry buttons
+                        document.querySelectorAll('.retry-sms').forEach(button => {
+                            button.addEventListener('click', () => retrySendSMS(button.dataset.caseId));
+                        });
+                    } else {
+                        matchesList.innerHTML = '<div class="alert alert-info">No matches found</div>';
+                    }
+                } else {
+                    matchesList.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+                }
+            } catch (error) {
+                matchesList.innerHTML = '<div class="alert alert-danger">Error scanning face</div>';
+                console.error('Error:', error);
+            } finally {
+                scanButton.disabled = false;
+                scanButton.innerHTML = '<i class="bi bi-camera"></i> Scan Face';
+            }
+        }
+
+        // Check SMS delivery status
+        async function checkDeliveryStatus(messageId) {
+            const statusElement = document.querySelector(`.sms-status[data-message-id="${messageId}"]`);
+            if (!statusElement) return;
+            
+            try {
+                const response = await fetch(`/api/sms/status/${messageId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    switch (data.status) {
+                        case 'delivered':
+                            statusElement.innerHTML = '<small class="text-success"><i class="bi bi-check-circle"></i> Delivered</small>';
+                            break;
+                        case 'failed':
+                            statusElement.innerHTML = `<small class="text-danger"><i class="bi bi-x-circle"></i> Delivery failed: ${data.details}</small>`;
+                            break;
+                        case 'sent':
+                            statusElement.innerHTML = '<small class="text-info"><i class="bi bi-clock"></i> Sent, waiting for delivery...</small>';
+                            // Check again after 5 seconds
+                            setTimeout(() => checkDeliveryStatus(messageId), 5000);
+                            break;
+                        default:
+                            statusElement.innerHTML = '<small class="text-warning"><i class="bi bi-question-circle"></i> Status unknown</small>';
+                            // Check again after 5 seconds
+                            setTimeout(() => checkDeliveryStatus(messageId), 5000);
+                    }
+                } else {
+                    statusElement.innerHTML = `<small class="text-danger"><i class="bi bi-x-circle"></i> Error checking status</small>`;
+                }
+            } catch (error) {
+                console.error('Error checking SMS status:', error);
+                statusElement.innerHTML = '<small class="text-danger"><i class="bi bi-x-circle"></i> Error checking status</small>';
+            }
+        }
+
+        // Retry sending SMS
+        async function retrySendSMS(caseId) {
+            try {
+                const response = await fetch('/api/notify_guardian', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        case_id: caseId,
+                        location: {
+                            latitude: '0',
+                            longitude: '0',
+                            address: 'Unknown location',
+                            timestamp: new Date().toISOString()
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                const button = document.querySelector(`.retry-sms[data-case-id="${caseId}"]`);
+                const alertDiv = button.closest('.alert');
+                
+                if (data.success) {
+                    alertDiv.className = 'alert alert-success';
+                    alertDiv.innerHTML = `
+                        <i class="bi bi-check-circle"></i> SMS sent to guardian
+                        <div class="sms-status" data-message-id="${data.message_id}">
+                            <small><i class="bi bi-clock"></i> Checking delivery status...</small>
+                        </div>
+                    `;
+                    checkDeliveryStatus(data.message_id);
+                } else {
+                    alertDiv.innerHTML = `
+                        <i class="bi bi-exclamation-triangle"></i> Failed to send SMS: ${data.error}
+                        <button class="btn btn-sm btn-danger mt-2 retry-sms" data-case-id="${caseId}">
+                            <i class="bi bi-arrow-repeat"></i> Retry
+                        </button>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error retrying SMS:', error);
+            }
+        }
+
+        // Initialize camera when page loads
+        document.addEventListener('DOMContentLoaded', setupCamera);
+        
+        // Add click event to scan button
+        document.getElementById('scan-button').addEventListener('click', scanFace);
+</script>
+</body>
+</html> 

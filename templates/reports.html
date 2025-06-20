@@ -1,0 +1,356 @@
+{% extends "dashboard_layout.html" %}
+
+{% block title %}Reports{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-color: #4e73df;
+        --secondary-color: #224abe;
+        --success-color: #1cc88a;
+        --info-color: #36b9cc;
+        --warning-color: #f6c23e;
+        --danger-color: #e74a3b;
+    }
+
+    .card {
+        border: none;
+        border-radius: 0.35rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header {
+        background-color: #f8f9fc;
+        border-bottom: 1px solid #e3e6f0;
+        padding: 0.75rem 1.25rem;
+    }
+
+    .stats-card {
+        border-left: 0.25rem solid;
+        border-radius: 0.35rem;
+    }
+
+    .stats-card.primary { border-left-color: var(--primary-color); }
+    .stats-card.success { border-left-color: var(--success-color); }
+    .stats-card.info { border-left-color: var(--info-color); }
+    .stats-card.warning { border-left-color: var(--warning-color); }
+
+    .stats-icon {
+        font-size: 2rem;
+        opacity: 0.4;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+
+    .table-responsive {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .filter-section {
+        background: #f8f9fc;
+        padding: 1rem;
+        border-radius: 0.35rem;
+        margin-bottom: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Filters Section -->
+    {% if is_admin %}
+    <div class="filter-section">
+        <form method="GET" class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label">Start Date</label>
+                <input type="date" class="form-control" name="start_date" value="{{ start_date }}">
+            </div>
+            <div class="col-md-5">
+                <label class="form-label">End Date</label>
+                <input type="date" class="form-control" name="end_date" value="{{ end_date }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Statistics Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card primary mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Cases</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_cases }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-folder stats-icon text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card success mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Found Cases</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ found_cases }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-check-circle stats-icon text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card info mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Missing Cases</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ missing_cases }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-search stats-icon text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card warning mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Success Rate</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ "%.1f"|format(success_rate) }}%</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-graph-up stats-icon text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row">
+        <!-- Monthly Trend -->
+        <div class="col-xl-8">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Monthly Case Trend</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="monthlyTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demographics -->
+        <div class="col-xl-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Demographics</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="demographicsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location and Age Distribution -->
+    <div class="row">
+        <div class="col-xl-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Cases by Location</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Location</th>
+                                    <th>Number of Cases</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for location, count in location_stats %}
+                                <tr>
+                                    <td>{{ location }}</td>
+                                    <td>{{ count }}</td>
+                                    <td>{{ "%.1f"|format(count / total_cases * 100) }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Age Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="ageDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Cases Table -->
+    {% if is_admin %}
+    <div class="card">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Recent Cases</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Age</th>
+                            <th>Gender</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for case in recent_cases %}
+                        <tr>
+                            <td>{{ case.name }}</td>
+                            <td>{{ case.age }}</td>
+                            <td>{{ case.gender }}</td>
+                            <td>{{ case.last_seen_location }}</td>
+                            <td>
+                                <span class="badge {% if case.status == 'found' %}bg-success{% else %}bg-warning{% endif %}">
+                                    {{ case.status }}
+                                </span>
+                            </td>
+                            <td>{{ case.created_at.strftime('%Y-%m-%d') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Export Buttons -->
+    <div class="mt-4">
+        <a href="{{ url_for('export_data', format='excel') }}" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel"></i> Export to Excel
+        </a>
+        <a href="{{ url_for('export_data', format='pdf') }}" class="btn btn-danger">
+            <i class="bi bi-file-earmark-pdf"></i> Export to PDF
+        </a>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Monthly Trend Chart
+    const monthlyData = {{ month_stats|tojson }};
+    new Chart(document.getElementById('monthlyTrendChart'), {
+        type: 'line',
+        data: {
+            labels: monthlyData.map(item => item[0]),
+            datasets: [{
+                label: 'Number of Cases',
+                data: monthlyData.map(item => item[1]),
+                borderColor: '#4e73df',
+                tension: 0.1,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+
+    // Demographics Chart
+    const genderData = {{ gender_stats|tojson }};
+    new Chart(document.getElementById('demographicsChart'), {
+        type: 'doughnut',
+        data: {
+            labels: genderData.map(item => item[0]),
+            datasets: [{
+                data: genderData.map(item => item[1]),
+                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    // Age Distribution Chart
+    const ageData = {{ age_stats|tojson }};
+    new Chart(document.getElementById('ageDistributionChart'), {
+        type: 'bar',
+        data: {
+            labels: ageData.map(item => item[0]),
+            datasets: [{
+                label: 'Number of Cases',
+                data: ageData.map(item => item[1]),
+                backgroundColor: '#4e73df'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %} 
