@@ -1,5 +1,5 @@
 # Web Framework
-<<<<<<< HEAD
+
 Flask==2.3.3
 Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.2
@@ -22,7 +22,7 @@ requests==2.31.0
 
 # SMS Service
 twilio==8.9.1
-=======
+
 Flask==2.2.5
 Flask-SQLAlchemy==3.0.5
 Flask-Login==0.6.2
@@ -45,22 +45,22 @@ requests==2.31.0
 
 # SMS Service
 twilio==7.16.0
->>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
+
 
 # Security
 python-dotenv==1.0.0
 bcrypt==4.0.1
-<<<<<<< HEAD
+
 PyJWT==2.8.0
 
 # Frontend
 Bootstrap-Flask==2.3.0
-=======
+
 PyJWT==2.7.0
 
 # Frontend
 Bootstrap-Flask==2.2.0
->>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
+
 
 # Utils
 python-dateutil==2.8.2
@@ -68,7 +68,7 @@ pytz==2023.3
 validators==0.22.0
 
 # Development
-<<<<<<< HEAD
+
 pytest==7.4.2
 black==23.9.1
 flake8==6.1.0 
