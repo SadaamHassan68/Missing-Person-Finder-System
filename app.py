@@ -21,9 +21,12 @@ import io
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, SelectField, DateField, MultipleFileField
 from wtforms.validators import DataRequired, NumberRange
+<<<<<<< HEAD
 import face_recognition
 import pickle
 import secrets
+=======
+>>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'
@@ -58,6 +61,7 @@ app.logger.info(f"Faces directory: {os.path.abspath('data/faces')}")
 # Load face detection cascade classifier
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
+<<<<<<< HEAD
 # Initialize face recognition model
 def load_face_encodings():
     if os.path.exists(ENCODINGS_FILE):
@@ -78,6 +82,60 @@ def save_face_encodings(encodings_data):
 
 # Load face encodings at startup
 face_encodings_data = load_face_encodings()
+=======
+# Initialize encodings dictionary
+if os.path.exists(ENCODINGS_FILE):
+    try:
+        with open(ENCODINGS_FILE, 'r') as f:
+            try:
+                encodings_data = json.load(f)
+                # Check if this is old format with 'names' instead of 'ids'
+                if "names" in encodings_data and "ids" not in encodings_data:
+                    app.logger.info("Converting old format encodings to new format")
+                    # Convert old format to new format
+                    old_names = encodings_data["names"]
+                    encodings_list = encodings_data["encodings"]
+                    
+                    # Create new dictionary with ids
+                    encodings_data = {"ids": [], "encodings": []}
+                    
+                    # Assign a UUID to each old name and transfer encodings
+                    for i, name in enumerate(old_names):
+                        if i < len(encodings_list):
+                            user_id = str(uuid.uuid4())
+                            encodings_data["ids"].append(user_id)
+                            encodings_data["encodings"].append(encodings_list[i])
+                            
+                            # Create user data entry if it doesn't exist
+                            if not os.path.exists(USER_DATA_FILE) or user_id not in user_data:
+                                if user_id not in user_data:
+                                    user_data[user_id] = {
+                                        'name': name,
+                                        'address': '',
+                                        'guardian_phone': '',
+                                        'registered_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                    }
+                    
+                    # Save the converted format
+                    with open(ENCODINGS_FILE, 'w') as f:
+                        json.dump(encodings_data, f)
+                    
+                    # Save user data if we created entries
+                    if user_data:
+                        with open(USER_DATA_FILE, 'w') as f:
+                            json.dump(user_data, f)
+                
+                app.logger.info(f"Loaded encodings data with {len(encodings_data.get('ids', []))} users")
+            except json.JSONDecodeError:
+                app.logger.warning(f"Invalid JSON in {ENCODINGS_FILE}, initializing empty encodings")
+                encodings_data = {"ids": [], "encodings": []}
+    except Exception as e:
+        app.logger.error(f"Error opening {ENCODINGS_FILE}: {str(e)}")
+        encodings_data = {"ids": [], "encodings": []}
+else:
+    app.logger.info(f"{ENCODINGS_FILE} does not exist, initializing empty encodings")
+    encodings_data = {"ids": [], "encodings": []}
+>>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
 
 # Initialize user data dictionary
 if os.path.exists(USER_DATA_FILE):
@@ -154,6 +212,7 @@ def login():
             return redirect(url_for('login'))
     return render_template('login.html')
 
+<<<<<<< HEAD
 # Admin registration token - change this to a secure random string in production
 ADMIN_REGISTRATION_TOKEN = secrets.token_urlsafe(32)
 
@@ -163,6 +222,10 @@ def register_admin(token):
         flash('Invalid registration token', 'error')
         return redirect(url_for('index'))
     
+=======
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+>>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
     if request.method == 'POST':
         username = request.form.get('username')
         email = request.form.get('email')
@@ -170,22 +233,37 @@ def register_admin(token):
         
         if User.query.filter_by(email=email).first():
             flash('Email already registered', 'error')
+<<<<<<< HEAD
             return redirect(url_for('register_admin', token=token))
+=======
+            return redirect(url_for('register'))
+>>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
         
         user = User(
             username=username,
             email=email,
+<<<<<<< HEAD
             password=generate_password_hash(password),
             role='admin'  # Set role as admin
+=======
+            password=generate_password_hash(password)
+>>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
         )
         db.session.add(user)
         db.session.commit()
         
+<<<<<<< HEAD
         log_activity('admin_registration', f'New admin registered: {username}')
         flash('Admin registration successful! Please login.', 'success')
         return redirect(url_for('login'))
     
     return render_template('register_admin.html')
+=======
+        log_activity('registration', f'New user registered: {username}')
+        flash('Registration successful! Please login.', 'success')
+        return redirect(url_for('login'))
+    return render_template('register.html')
+>>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
 
 @app.route('/dashboard')
 @login_required
@@ -272,6 +350,7 @@ def new_case():
                 photo_path = os.path.join('data/faces', filename)
                 photo.save(photo_path)
                 
+<<<<<<< HEAD
                 # Load image and detect face
                 image = face_recognition.load_image_file(photo_path)
                 face_locations = face_recognition.face_locations(image)
@@ -291,6 +370,28 @@ def new_case():
                         'right': int(face_locations[0][1]),
                         'bottom': int(face_locations[0][2]),
                         'left': int(face_locations[0][3])
+=======
+                # Detect faces using OpenCV
+                image = cv2.imread(photo_path)
+                gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+                
+                if len(faces) > 0:
+                    # Store the largest face detected
+                    max_area = 0
+                    max_face = None
+                    for (x, y, w, h) in faces:
+                        if w * h > max_area:
+                            max_area = w * h
+                            max_face = (x, y, w, h)
+                    
+                    # Create face encoding (simplified - just store face coordinates)
+                    face_data = {
+                        'x': int(max_face[0]),
+                        'y': int(max_face[1]),
+                        'w': int(max_face[2]),
+                        'h': int(max_face[3])
+>>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
                     }
                     
                     photo_record = Photo(
@@ -345,6 +446,7 @@ def api_scan():
         if image is None:
             return jsonify({"success": False, "message": "Failed to load image"}), 400
         
+<<<<<<< HEAD
         # Convert to RGB for face_recognition
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         
@@ -405,6 +507,106 @@ def api_scan():
                         'notification_error': None if success else message,
                         'message_id': message_id
                     })
+=======
+        # Convert to grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Detect faces using multiple scale factors
+        faces = []
+        scale_factors = [1.1, 1.2, 1.3]
+        min_neighbors_values = [3, 4, 5]
+        
+        for scale in scale_factors:
+            for min_neighbors in min_neighbors_values:
+                detected = face_cascade.detectMultiScale(
+                    gray,
+                    scaleFactor=scale,
+                    minNeighbors=min_neighbors,
+                    minSize=(30, 30)
+                )
+                if len(detected) > 0:
+                    faces = detected
+                    break
+            if len(faces) > 0:
+                break
+        
+        if len(faces) == 0:
+            return jsonify({"success": False, "message": "No face detected in the image"}), 400
+        
+        # Get the largest face
+        max_area = 0
+        max_face = None
+        for (x, y, w, h) in faces:
+            if w * h > max_area:
+                max_area = w * h
+                max_face = (x, y, w, h)
+        
+        # Compare with all cases
+        matches = []
+        cases = Case.query.all()
+        
+        for case in cases:
+            for photo in case.photos:
+                if photo.face_encoding:
+                    stored_face = json.loads(photo.face_encoding)
+                    
+                    # Calculate face similarity based on multiple factors
+                    stored_area = stored_face['w'] * stored_face['h']
+                    current_area = max_face[2] * max_face[3]
+                    
+                    # Area ratio
+                    area_ratio = min(stored_area, current_area) / max(stored_area, current_area)
+                    
+                    # Position similarity
+                    x_center_diff = abs((stored_face['x'] + stored_face['w']/2) - (max_face[0] + max_face[2]/2))
+                    y_center_diff = abs((stored_face['y'] + stored_face['h']/2) - (max_face[1] + max_face[3]/2))
+                    position_similarity = 1 - (x_center_diff + y_center_diff) / (image.shape[1] + image.shape[0])
+                    
+                    # Aspect ratio similarity
+                    stored_aspect = stored_face['w'] / stored_face['h']
+                    current_aspect = max_face[2] / max_face[3]
+                    aspect_similarity = min(stored_aspect, current_aspect) / max(stored_aspect, current_aspect)
+                    
+                    # Combined similarity score (weighted average)
+                    similarity = (
+                        area_ratio * 0.4 +
+                        position_similarity * 0.3 +
+                        aspect_similarity * 0.3
+                    ) * 100
+                    
+                    if similarity > 40:  # Lower threshold for more matches
+                        # Send SMS notification
+                        success, message, message_id = send_match_notification(
+                            case.guardian_phone,
+                            case.name,
+                            {
+                                'latitude': request.form.get('latitude', '0'),
+                                'longitude': request.form.get('longitude', '0'),
+                                'address': request.form.get('address', 'Unknown location'),
+                                'timestamp': datetime.now().isoformat()
+                            },
+                            {
+                                'guardian_name': case.guardian_name,
+                                'age': case.age,
+                                'gender': case.gender
+                            }
+                        )
+                        
+                        matches.append({
+                            'case_id': case.id,
+                            'name': case.name,
+                            'age': case.age,
+                            'gender': case.gender,
+                            'last_seen_location': case.last_seen_location,
+                            'last_seen_date': case.last_seen_date.strftime('%Y-%m-%d'),
+                            'guardian_name': case.guardian_name,
+                            'guardian_phone': case.guardian_phone,
+                            'match_confidence': round(similarity, 1),
+                            'notification_sent': success,
+                            'notification_error': None if success else message,
+                            'message_id': message_id
+                        })
+>>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
         
         return jsonify({
             "success": True, 
@@ -866,6 +1068,7 @@ def export_data(format):
         flash('Invalid export format', 'error')
         return redirect(url_for('reports'))
 
+<<<<<<< HEAD
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -890,5 +1093,7 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html')
 
+=======
+>>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
 if __name__ == '__main__':
     app.run(debug=True) 

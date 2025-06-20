@@ -75,6 +75,7 @@ All required Python packages are listed in `requirements.txt`, including:
 - Fill in required information
 - Upload reference photos for missing person
 
+<<<<<<< HEAD
 ### Admin User Registration
 To register an admin user:
 1. **Create a regular user account** first through the registration page
@@ -97,6 +98,8 @@ To register an admin user:
 6. **Log out** of your account if you're currently logged in
 7. **Log back in** - you should now have admin privileges
 
+=======
+>>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
 ### 2. Face Scanning
 - Go to "Face Scan" page
 - Allow camera access when prompted
@@ -138,12 +141,21 @@ To register an admin user:
 - Phone numbers are verified before sending SMS
 - User authentication required for sensitive operations
 
+<<<<<<< HEAD
 ## admin login 
 Email: admin@admin.com
 Password: admin
 Or alternatively:
 Email: admin@example.com
 Password: admin123
+=======
+## Support
+
+For technical support or questions:
+- Email: support@example.com
+- Phone: +252 XX XXX XXXX
+- Working hours: 8 AM - 8 PM EAT
+>>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
 
 ## Contributing
 
@@ -153,3 +165,9 @@ Password: admin123
 4. Push to the branch
 5. Create a new Pull Request
 
+<<<<<<< HEAD
+=======
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+>>>>>>> 0a1ec7f2b5fdf2814bfdd7c1a032c09ad2fe1c0a
